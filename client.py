@@ -14,7 +14,7 @@ class Client():
         # SETUP NAME
         print("Input user name: ")
         while True:
-            name = input()
+            name = raw_input()
             self.socket.send(name.encode())
             res = self.socket.recv(1024).decode()
             if res == "1":
@@ -33,8 +33,9 @@ class Client():
                 print((str(count) + "/" + "3 player connected to server"))
             else:
                 print("All players connected. Game will start in 3s")
+                break
 
 
 fClient = Client()
-fClient.connectServer(socket.gethostname(),1234)
+fClient.connectServer(socket.gethostname(),12345)
         
