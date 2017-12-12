@@ -4,6 +4,11 @@ import re
 import threading
 import time
 from random import randint
+import os
+
+
+def debug(text):
+    print text
 
 class Server():
     #Check name, return 0 if syntax error, 1 if duplicated, 2 if OK
@@ -48,7 +53,10 @@ class Server():
             self.connect.send((str((len(self.Server.CONNECTION))) + " " + str(self.Server.PNUM)).encode())
             #Wait for player to register
             while True:
-                name = self.connect.recv(1024).decode()
+                try:
+                    name = self.connect.recv(1024).decode()
+                except:
+                    break
                 #Check number of player
                 if (len(self.Server.CONNECTION) == self.Server.PNUM):
                     self.connect.close()
@@ -73,13 +81,13 @@ class Server():
         self.countPThred = Server.countPlayerThread(self)
         self.countPThred.start()
         self.connectLock = False
-        self.SCORE = []
+        self.SCORE = {}
         self.LNUM = randint(1,30)
         print("Created server")
     
     def openForConnection(self):
         self.socket.listen(5)
-        print ("Waiting for player to connect ...")        
+        print ("Waiting for player to connect ...")
         while (len(self.CONNECTION) < self.PNUM):
             try:
                 connect, addr = self.socket.accept()
@@ -89,26 +97,44 @@ class Server():
                 print("All players connected. Game will start in 3s")
 
     def initGame(self):
-        print("In init")
+        os.system("cls")
         print("List of player: ")
         list_player = " ".join(str(i) for i in self.CONNECTION.keys())
         for player in self.CONNECTION:
             print(player)
-            self.SCORE.append([player,0])
+            self.SCORE[player] = 0
             self.CONNECTION[player][0].send(list_player)
+        print ("Length: " + str(self.LNUM))
 
 
-    # def startGame(self):
+    def startGame(self):
+        while True:
+            for player in self.CONNECTION:
+                print (player + "'s turn ...")
+                for t_player in self.CONNECTION:
+                    self.CONNECTION[t_player][0].send(player.encode())
+                point = self.CONNECTION[player][0].recv(1024).decode()
+                #Kiem tra diem:
+                if (self.SCORE[player] + int(point)) == self.LNUM:
+                    for t_player in self.CONNECTION:
+                        self.CONNECTION[t_player][0].send("win".decode())
+                        self.CONNECTION[t_player][0].close()
+                    print ("Player " + player + " won")
+                    print ("The game will end in 3s ...")
+                    exit()
+                else:
+                    #Update in server:
+                    if (self.SCORE[player] + int(point)) < self.LNUM:
+                        self.SCORE[player] += int(point)
+                    #Update in client:
+                    for t_player in self.CONNECTION:
+                        self.CONNECTION[t_player][0].send(str(self.SCORE[player]).decode())
 
-            
 
-
-    def sendPoint2Client(self):
-        for player in self.CONNECTION:
-            self.CONNECTION[player][0].send(self.CONNECTION[player][1])
 
 
 
 fServer = Server(socket.gethostname(),12345,3)
 fServer.openForConnection()
 fServer.initGame()
+fServer.startGame()
