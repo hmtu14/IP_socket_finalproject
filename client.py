@@ -1,6 +1,9 @@
 import socket
 from random import randint
 import os
+from termios import tcflush, TCIFLUSH
+import time, sys
+
 
 def debug(text):
     print "======"
@@ -15,6 +18,7 @@ class Client():
         self.name = ""
         self.SCORE = {}
         self.LNUM = 0
+        self.PNUM = 0
 
     def connectServer(self, host, port):
         # CONNECT
@@ -22,6 +26,7 @@ class Client():
         #Receive server information
         info = self.socket.recv(1024).decode()
         print("Current server: " + info.split(" ")[0] + "/" + info.split(" ")[1])
+        self.PNUM = int(info.split(" ")[1])
         # SETUP NAME
         print("Input user name: ")
         while True:
@@ -41,18 +46,21 @@ class Client():
         #Wait for others player
         while True:
             count = self.socket.recv(1024).decode()
-            print((str(count) + "/" + "3 player connected to server"))
-            if (int(count) == PNUM):
+            print((str(count) + "/" + str(self.PNUM) + "player connected to server"))
+            if (int(count) == self.PNUM):
                 print("All players connected. Game will start in 3s")
                 break
 
 
     def printScore(self):
-        for player in self.SCORE:
-            print(player, self.SCORE[player])
+         for player in self.SCORE:
+            space = ""
+            for i in range(0,20 - len(player)):
+                space += " "
+            print(str(player) + space + str(self.SCORE[player]))
 
     def initGame(self):
-        os.system("cls")
+        os.system("clear")
         list_player = self.socket.recv(1024)
         for player in list_player.split():
             self.SCORE[player] = 0
@@ -63,12 +71,16 @@ class Client():
         while True:
             #Nhan ten player den luot tu server
             player = self.socket.recv(1024).decode()
-            debug(player)
+            print(str(player) + "'s turn ...")
             if (player == self.name):
                 #Neu la luot minh
-                print "Your turn, press enter to roll ..."
-                #Bug here, need to clear buffer
-                raw_input()
+                while True:
+                    print "Your turn, type roll to roll ..."
+                    #Bug here, need to clear buffer
+                    tcflush(sys.stdin, TCIFLUSH)
+                    text = raw_input()
+                    if text == "roll":
+                        break
                 roll = randint(1,6)
                 print ("You rolled " + str(roll) + " point" )
                 self.socket.send(str(roll).encode())
@@ -79,13 +91,14 @@ class Client():
                 self.socket.close()
                 exit()
             else:
-                self.SCORE[player] = int(new_score)
+                self.SCORE[player] = int(new_score)            
+            time.sleep(1)
+            os.system("clear")
             self.printScore()
             print "======================="
             print "Next turn"
 
 
-PNUM = 3
 fClient = Client()
 fClient.connectServer(socket.gethostname(),12345)
 fClient.initGame()

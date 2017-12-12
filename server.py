@@ -7,6 +7,7 @@ from random import randint
 import os
 
 
+
 def debug(text):
     print text
 
@@ -97,14 +98,18 @@ class Server():
                 print("All players connected. Game will start in 3s")
 
     def initGame(self):
-        os.system("cls")
+        os.system("clear")
         print("List of player: ")
         list_player = " ".join(str(i) for i in self.CONNECTION.keys())
         for player in self.CONNECTION:
             print(player)
             self.SCORE[player] = 0
             self.CONNECTION[player][0].send(list_player)
+            #nen dat them recv o day
         print ("Length: " + str(self.LNUM))
+        for i in range(0,3):
+            time.sleep(1)
+            print (3-i)
 
 
     def startGame(self):
@@ -129,12 +134,22 @@ class Server():
                     #Update in client:
                     for t_player in self.CONNECTION:
                         self.CONNECTION[t_player][0].send(str(self.SCORE[player]).decode())
+                        #Nen dat them recv o day
+                    time.sleep(1)
 
 
+if (__name__ == "__main__"):
+    while True:
+        print "Input Number of Player: "
+        PNUM = raw_input()
+        try:
+            PNUM = int(PNUM)
+            if (PNUM > 1 and PNUM < 9):
+                break
+        except:
+            pass
 
-
-
-fServer = Server(socket.gethostname(),12345,3)
-fServer.openForConnection()
-fServer.initGame()
-fServer.startGame()
+    fServer = Server(socket.gethostname(),12345,PNUM)
+    fServer.openForConnection()
+    fServer.initGame()
+    fServer.startGame()
